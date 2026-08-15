@@ -1,0 +1,5 @@
+# Local-only values. Copy to .dev.vars and use a synthetic secret.
+MAIL_DOMAIN=example.test
+BACKEND_INGEST_URL=http://127.0.0.1:3000/internal/email-ingest
+EMAIL_INGEST_SECRET=development-email-ingest-secret-which-is-at-least-32-bytes
+EMAIL_INGEST_MAX_MESSAGE_BYTES=10485760

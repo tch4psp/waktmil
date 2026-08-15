@@ -1,0 +1,24 @@
+services:
+  clamav-test:
+    image: clamav/clamav:1.4
+    ports:
+      - "127.0.0.1:53310:3310"
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 90s
+  postgres-test:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: tempmail_test
+      POSTGRES_USER: tempmail_test
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tempmail_test -d tempmail_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20

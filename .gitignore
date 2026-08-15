@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+workers/email-ingest/.dev.vars
+workers/email-ingest/.wrangler/
+coverage/
+playwright-report/
+test-results/
+artifacts/
+data/
+secrets/
+*.log
+*.trace
+*.heapsnapshot

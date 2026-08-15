@@ -1,0 +1,156 @@
+services:
+  nginx:
+    image: nginx:1.28-alpine
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./secrets/https_fullchain.pem:/etc/nginx/tls/fullchain.pem:ro
+      - ./secrets/https_privkey.pem:/etc/nginx/tls/privkey.pem:ro
+      - acme_data:/var/www/acme:ro
+    networks: [private]
+    tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      NODE_ENV: production
+      RUNTIME_ROLE: web
+      HTTP_HOST: 0.0.0.0
+      CLAMAV_HOST: clamav
+      DATABASE_HOST: postgres
+      DATABASE_PASSWORD_FILE: /run/secrets/db_password
+      IP_HMAC_KEY_FILE: /run/secrets/ip_hmac_key
+      ATTACHMENT_ROOT: /data/attachments
+      TEMP_ROOT: /data/tmp
+      METRICS_HOST: 0.0.0.0
+    volumes:
+      - attachments_data:/data/attachments
+      - temp_data:/data/tmp
+      - ./secrets/db_password:/run/secrets/db_password:ro
+      - ./secrets/ip_hmac_key:/run/secrets/ip_hmac_key:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+    networks: [private]
+    expose: ["3000"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/health/ready',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: ${ENV_FILE:-.env}
+    command: ["node", "scripts/migrate.js"]
+    environment:
+      NODE_ENV: production
+      RUNTIME_ROLE: web
+      CLAMAV_HOST: clamav
+      DATABASE_HOST: postgres
+      DATABASE_PASSWORD_FILE: /run/secrets/db_password
+      IP_HMAC_KEY_FILE: /run/secrets/ip_hmac_key
+      ATTACHMENT_ROOT: /data/attachments
+      TEMP_ROOT: /data/tmp
+    volumes:
+      - ./secrets/db_password:/run/secrets/db_password:ro
+      - ./secrets/ip_hmac_key:/run/secrets/ip_hmac_key:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [private]
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: "no"
+  cleanup:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    env_file: ${ENV_FILE:-.env}
+    command: ["node", "src/workers/cleanup.js"]
+    environment:
+      NODE_ENV: production
+      RUNTIME_ROLE: cleanup
+      CLAMAV_HOST: clamav
+      DATABASE_HOST: postgres
+      DATABASE_PASSWORD_FILE: /run/secrets/db_password
+      IP_HMAC_KEY_FILE: /run/secrets/ip_hmac_key
+      ATTACHMENT_ROOT: /data/attachments
+      TEMP_ROOT: /data/tmp
+    volumes:
+      - attachments_data:/data/attachments
+      - temp_data:/data/tmp
+      - ./secrets/db_password:/run/secrets/db_password:ro
+      - ./secrets/ip_hmac_key:/run/secrets/ip_hmac_key:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [private]
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+  clamav:
+    image: clamav/clamav:1.4
+    volumes:
+      - clamav_data:/var/lib/clamav
+    networks: [private]
+    expose: ["3310"]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 1 >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+  postgres:
+    image: postgres:18-alpine
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-tempmail}
+      POSTGRES_USER: ${DATABASE_USER:-tempmail_app}
+      POSTGRES_PASSWORD_FILE: ${DATABASE_PASSWORD_FILE:-/run/secrets/db_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./secrets/db_password:/run/secrets/db_password:ro
+    networks: [private]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    restart: unless-stopped
+networks:
+  private:
+    internal: true
+volumes:
+  postgres_data:
+  attachments_data:
+  temp_data:
+  clamav_data:
+  acme_data:

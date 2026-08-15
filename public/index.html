@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="data:,">
+  <title>Dropmail</title>
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/app.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/message-viewer.js" defer></script>
+  <script src="/assets/js/inbox.js" defer></script>
+  <script src="/assets/js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Dropmail home">Dropmail</a>
+    <p class="header-status" id="connection-status" aria-live="polite">Ready</p>
+  </header>
+  <main class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">Temporary inbox</p>
+      <h1 id="page-title">Receive email without keeping it.</h1>
+      <p class="intro-copy">Create a short-lived address, then read incoming mail safely while it is active.</p>
+    </section>
+
+    <section id="create-panel" class="create-panel" aria-labelledby="create-title">
+      <h2 id="create-title">Create an inbox</h2>
+      <label id="domain-label" for="domain-select">Receiving domain</label>
+      <select id="domain-select" name="domain"></select>
+      <button id="create-mailbox" class="button button-primary" type="button">Create temporary email</button>
+      <p class="quiet-note">This inbox and its messages disappear at expiry. Do not use it for account recovery.</p>
+    </section>
+
+    <section id="mailbox-panel" class="mailbox-workspace" hidden aria-label="Temporary mailbox">
+      <div class="mailbox-header">
+        <div>
+          <p class="eyebrow">Your temporary address</p>
+          <output id="mailbox-address" class="address-value"></output>
+          <p id="expiry-copy" class="expiry-copy"></p>
+        </div>
+        <div class="header-actions">
+          <button id="copy-address" class="button button-secondary" type="button">Copy address</button>
+          <button id="refresh-inbox" class="button button-secondary" type="button">Refresh</button>
+          <button id="new-mailbox" class="button button-secondary" type="button">New address</button>
+        </div>
+      </div>
+      <div class="workspace-grid">
+        <section class="inbox-panel" aria-labelledby="inbox-title">
+          <div class="panel-heading">
+            <h2 id="inbox-title">Inbox</h2>
+            <span id="inbox-count" class="count-badge">0</span>
+          </div>
+          <p id="inbox-state" class="state-copy" aria-live="polite">Waiting for messages...</p>
+          <ul id="message-list" class="message-list" aria-label="Messages"></ul>
+        </section>
+        <section id="message-panel" class="message-panel" aria-live="polite" aria-labelledby="message-title">
+          <div class="panel-heading">
+            <h2 id="message-title">Message</h2>
+            <button id="delete-message" class="button button-danger" type="button" disabled>Delete message</button>
+          </div>
+          <p id="message-state" class="state-copy">Choose a message to read it.</p>
+          <article id="message-content" hidden></article>
+        </section>
+      </div>
+      <div class="mailbox-footer">
+        <p class="quiet-note">Email senders and links can be deceptive. Treat them as unverified.</p>
+        <button id="delete-mailbox" class="text-button" type="button">Delete mailbox</button>
+      </div>
+    </section>
+
+    <section id="expired-panel" class="expired-panel" hidden aria-labelledby="expired-title">
+      <h2 id="expired-title">This temporary inbox has expired.</h2>
+      <p>Create a new address to receive more email.</p>
+      <button id="create-after-expiry" class="button button-primary" type="button">Create new email</button>
+    </section>
+  </main>
+  <p id="announcements" class="visually-hidden" aria-live="polite"></p>
+
+  <dialog id="mailbox-confirmation" aria-labelledby="mailbox-confirmation-title">
+    <form method="dialog" class="dialog-content">
+      <h2 id="mailbox-confirmation-title">Delete this mailbox?</h2>
+      <p>Messages and attachments will become unavailable immediately.</p>
+      <div class="dialog-actions">
+        <button class="button button-secondary" value="cancel">Cancel</button>
+        <button id="confirm-mailbox-delete" class="button button-danger" value="confirm">Delete mailbox</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="message-confirmation" aria-labelledby="message-confirmation-title">
+    <form method="dialog" class="dialog-content">
+      <h2 id="message-confirmation-title">Delete this message?</h2>
+      <p>The message and its attachments will become unavailable immediately.</p>
+      <div class="dialog-actions">
+        <button class="button button-secondary" value="cancel">Cancel</button>
+        <button id="confirm-message-delete" class="button button-danger" value="confirm">Delete message</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

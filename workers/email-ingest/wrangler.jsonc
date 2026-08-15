@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "temporary-email-ingest",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-08-15",
+  "vars": {
+    "MAIL_DOMAIN": "example.test",
+    "BACKEND_INGEST_URL": "https://app.example.test/internal/email-ingest",
+    "EMAIL_INGEST_MAX_MESSAGE_BYTES": "10485760"
+  }
+}

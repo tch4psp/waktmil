@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Maintenance</title><link rel="stylesheet" href="/assets/css/app.css"></head>
+<body><main class="shell maintenance"><section class="panel"><h1>Temporarily unavailable</h1><p id="maintenance-message">Service is temporarily unavailable. Please try again shortly.</p></section></main><script>
+fetch('/api/v1/site', { cache: 'no-store' }).then((response) => response.json()).then((data) => { document.title = `${data.site.siteName} maintenance`; document.querySelector('#maintenance-message').textContent = data.site.maintenanceMessage; }).catch(() => {});
+</script></body>
+</html>
